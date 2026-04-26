@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "585681045503",
+    "project_id": "moshaaaaaa",
+    "storage_bucket": "moshaaaaaa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:585681045503:android:49a22bd359166d176209ca",
+        "android_client_info": {
+          "package_name": "com.mosquit.moshaaaa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAvcWKAUt9CaDG7Z2gEW91lP-U0ImuiNVk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
