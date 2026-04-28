@@ -21,6 +21,15 @@ class ResultController extends GetxController {
   double get waterCoverage => _toDouble(result['water_coverage_percent']) ?? 0;
   int get detections => _toInt(result['total_detections']) ?? 0;
 
+  double get possibilityPercent {
+    final double? explicit = _readPossibilityPercent();
+    if (explicit != null) {
+      return explicit;
+    }
+
+    return _derivePossibilityPercent(waterCoverage, detections);
+  }
+
   List<String> get recommendations {
     final dynamic value = result['recommendations'];
     if (value is! List) {
@@ -87,5 +96,30 @@ class ResultController extends GetxController {
     } on FormatException {
       return null;
     }
+  }
+
+  double? _readPossibilityPercent() {
+    final dynamic raw =
+        result['possibility_percent'] ??
+        result['possibility'] ??
+        result['probability'] ??
+        result['confidence'];
+
+    final double? value = _toDouble(raw);
+    if (value == null) {
+      return null;
+    }
+
+    if (value <= 1.0) {
+      return (value * 100.0).clamp(0.0, 100.0).toDouble();
+    }
+
+    return value.clamp(0.0, 100.0).toDouble();
+  }
+
+  double _derivePossibilityPercent(double waterCoverage, int detections) {
+    final double score = waterCoverage + (detections * 3.0);
+    final double normalized = (score / 30.0).clamp(0.0, 1.0);
+    return normalized * 100.0;
   }
 }

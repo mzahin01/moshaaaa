@@ -13,6 +13,8 @@ class AnalysisController extends GetxController {
 
   Uint8List imageBytes = Uint8List(0);
   String fileName = 'scan_image.jpg';
+  double? metadataLatitude;
+  double? metadataLongitude;
   bool _started = false;
 
   @override
@@ -47,7 +49,7 @@ class AnalysisController extends GetxController {
         fileName: fileName,
       );
 
-      await Get.offNamed(Routes.result, arguments: result);
+      await Get.offNamed(Routes.result, arguments: _mergeMetadataGps(result));
     } on TimeoutException {
       _showRetrySnackbar('Analysis timed out after 60 seconds.');
     } catch (error) {
@@ -74,6 +76,39 @@ class AnalysisController extends GetxController {
     if (rawName is String && rawName.trim().isNotEmpty) {
       fileName = rawName;
     }
+
+    final dynamic rawMetadataGps = args['metadataGps'];
+    if (rawMetadataGps is Map) {
+      metadataLatitude = _toDouble(rawMetadataGps['latitude']);
+      metadataLongitude = _toDouble(rawMetadataGps['longitude']);
+    }
+  }
+
+  Map<String, dynamic> _mergeMetadataGps(Map<String, dynamic> result) {
+    if (metadataLatitude == null || metadataLongitude == null) {
+      return result;
+    }
+
+    final Map<String, dynamic> merged = Map<String, dynamic>.from(result);
+    final Map<String, dynamic> gps = merged['gps'] is Map
+        ? Map<String, dynamic>.from(merged['gps'] as Map)
+        : <String, dynamic>{};
+
+    gps['latitude'] = metadataLatitude;
+    gps['longitude'] = metadataLongitude;
+    merged['gps'] = gps;
+
+    return merged;
+  }
+
+  double? _toDouble(dynamic value) {
+    if (value == null) {
+      return null;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse(value.toString());
   }
 
   void _showRetrySnackbar(String message) {

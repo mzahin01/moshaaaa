@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../widgets/risk_badge.dart';
 import '../../../../widgets/stat_card.dart';
@@ -15,6 +16,7 @@ class ResultView extends GetView<ResultController> {
     final List<String> recommendations = controller.recommendations;
     final double? latitude = controller.latitude;
     final double? longitude = controller.longitude;
+    final double possibility = controller.possibilityPercent;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Analysis Result')),
@@ -27,6 +29,11 @@ class ResultView extends GetView<ResultController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
+                    StatCard(
+                      title: 'Possibility',
+                      value: '${possibility.toStringAsFixed(0)}%',
+                    ),
+                    const SizedBox(height: 16),
                     _buildAnnotatedImage(),
                     const SizedBox(height: 16),
                     RiskBadge(riskLevel: controller.riskLevel),
@@ -71,25 +78,41 @@ class ResultView extends GetView<ResultController> {
                     if (latitude != null && longitude != null) ...<Widget>[
                       const SizedBox(height: 12),
                       Text(
-                        'Detected Location',
+                        'Photo Location',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 10),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              Text('Latitude: ${latitude.toStringAsFixed(6)}'),
-                              Text(
-                                'Longitude: ${longitude.toStringAsFixed(6)}',
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          height: 200,
+                          child: FlutterMap(
+                            options: MapOptions(
+                              initialCenter: LatLng(latitude, longitude),
+                              initialZoom: 15.0,
+                              interactionOptions: const InteractionOptions(
+                                flags:
+                                    InteractiveFlag.all &
+                                    ~InteractiveFlag.rotate,
                               ),
-                              const SizedBox(height: 12),
-                              FilledButton.icon(
-                                onPressed: () => _openMap(latitude, longitude),
-                                icon: const Icon(Icons.map),
-                                label: const Text('View on Google Maps'),
+                            ),
+                            children: <Widget>[
+                              TileLayer(
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName: 'com.example.moshaaaa',
+                              ),
+                              MarkerLayer(
+                                markers: <Marker>[
+                                  Marker(
+                                    point: LatLng(latitude, longitude),
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.red,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -129,24 +152,5 @@ class ResultView extends GetView<ResultController> {
             : Image.memory(controller.annotatedBytes!, fit: BoxFit.cover),
       ),
     );
-  }
-
-  Future<void> _openMap(double latitude, double longitude) async {
-    final Uri mapsUri = Uri.parse(
-      'https://www.google.com/maps?q=$latitude,$longitude',
-    );
-
-    final bool launched = await launchUrl(
-      mapsUri,
-      mode: LaunchMode.externalApplication,
-    );
-
-    if (!launched) {
-      Get.snackbar(
-        'Map Error',
-        'Could not launch Google Maps.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-    }
   }
 }
